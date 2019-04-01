@@ -1,4 +1,5 @@
-"""This project will download all reports from a cattle auction and return them in some sort of useful format"""
+"""This project will download all reports from a cattle auction and return
+    them in some sort of useful format"""
 import re
 import requests
 
@@ -19,11 +20,22 @@ if MODE == 'dev':
 else:
     R = requests.get(ARCHIVE_URL)
 
-MATCH_STRING = r'<a href=\"\?code=(.+)&date=(\d{4}-\d{2}-\d{2})\">'
 
-X = re.findall(MATCH_STRING, R)
+def get_report_urls_from_html(archive_html):
+    """Extract the available dates for historical reports from the html of the archive page.
 
-print(ARCHIVE_URL)
+    Arguments: archive_html: a string containing the html from a page containing a list of archives.
+
+    Returns: A list of strings, each containing a datestring in the format
+    "2019-03-20" where each match indicates there is a link to a report
+    """
+
+    match_string = r'<a href=\"\?code=.+&date=(\d{4}-\d{2}-\d{2})\">'
+    return re.findall(match_string, archive_html)
+
+X = get_report_urls_from_html(R)
+
+
 
 
 #print(r.text)
