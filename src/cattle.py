@@ -7,21 +7,30 @@ MODE = 'dev'
 
 BASE_ADDRESS = "https://www.cattle.com/markets/"
 ARCHIVE_BASE = "archive.aspx?code="
-MARKET_CODE = "TV_LS149"
 
-ARCHIVE_URL = BASE_ADDRESS + ARCHIVE_BASE + MARKET_CODE
 
 #current_report = "https://www.cattle.com/markets/archive.aspx?code=TV_LS149"
 #archive_page = "https://www.cattle.com/markets/archive.aspx?code=TV_LS149"
 
-if MODE == 'dev':
-    with open('sample_archive') as f:
-        R = f.read()
-else:
-    R = requests.get(ARCHIVE_URL)
+
+def get_report_from_url(report_url):
+    """Get the html from a report URL.
+
+    arguments: The url to download
+
+    returns: a string containing the html of the requested page
+    """
+
+    if MODE == 'dev':
+        with open('sample_archive') as sample_file:
+            results = sample_file.read()
+    else:
+        results = requests.get(report_url)
+
+    return results
 
 
-def get_report_urls_from_html(archive_html):
+def get_report_dates_from_html(archive_html):
     """Extract the available dates for historical reports from the html of the archive page.
 
     Arguments: archive_html: a string containing the html from a page containing a list of archives.
@@ -33,14 +42,24 @@ def get_report_urls_from_html(archive_html):
     match_string = r'<a href=\"\?code=.+&date=(\d{4}-\d{2}-\d{2})\">'
     return re.findall(match_string, archive_html)
 
-X = get_report_urls_from_html(R)
+def make_archive_head_url(market_code):
+    """Return the appropriate URL for the top archive page
+    arguments: markeg_code string containing the id of the auction to download
+    returns: a string containing the URL to download the top archive page
+    """
+    return BASE_ADDRESS + ARCHIVE_BASE + market_code
 
 
+def download_history_for_marketplace(market_code="TV_LS149"):
+    """This returns all available data for a marketplace
+    Arguments: market_place code
 
+    Returns: TBD
+    """
+    header_page = get_report_from_url(market_code)
+    reports_available = get_report_dates_from_html(header_page)
+    return reports_available
 
-#print(r.text)
-
-# can do a regex max for <a href="?code=TV_LS149&date=2015-11-18">
 
 
 # Given the URL for a site, find it's archives
