@@ -2,6 +2,7 @@
     them in some sort of useful format"""
 import re
 import requests
+from bs4 import BeautifulSoup
 
 MODE = 'dev'
 
@@ -49,6 +50,72 @@ def make_archive_head_url(market_code):
     """
     return BASE_ADDRESS + ARCHIVE_BASE + market_code
 
+def can_be_table_start(elem):
+    """accepts an html element determines if it is the
+    start of a table.
+    """
+    return elem.string is not None and elem.string.startswith('\xa0')
+
+def find_table(html_frag):
+    """takes in an a string containing an html grament
+    returns up to 2 strings: the first is the text corresponding to a table
+    the second is the remainder of the string
+    """
+    active_table = False
+    all_tables = []
+    current_table = []
+    stop_tags = 0
+
+    for e in html_frag:
+        if (not active_table) and (can_be_table_start(e)):
+            stop_tags = 0
+            active_table = True
+            title = e
+            continue
+
+        if active_table:
+            if e.string is not None:
+                current_table.append(e.string)
+                stop_tags = 0
+            elif e.name is not None and e.name == "br":
+                stop_tags += 1
+
+        if stop_tags == 2:
+            all_tables.append((title, current_table))
+            current_table = []
+            active_table = False
+            stop_tags = 0
+
+    return all_tables
+
+def convert_table(table):
+    """I am sick of docstrings
+    """
+    name, data = table
+    if data[0] == '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price':
+        return table
+    else:
+        return None
+
+def parse(page_html):
+    """Extract the part of the page I care about
+
+    arbuments: page_html - string containing the html to be parsed
+
+    returns: the results, format tbd
+
+    """
+    soup = BeautifulSoup(page_html, 'html.parser')
+    all_tables = find_table(list(soup.pre.children))
+    cleaned_tables = map(convert_table, all_tables)
+    just_tables = filter(lambda x: x is not None, cleaned_tables)
+
+    for name, table in just_tables:
+        print("***************")
+        print(name)
+        for line in table:
+            print(line)
+
 
 def download_history_for_marketplace(market_code="TV_LS149"):
     """This returns all available data for a marketplace
@@ -58,7 +125,27 @@ def download_history_for_marketplace(market_code="TV_LS149"):
     """
     header_page = get_report_from_url(market_code)
     reports_available = get_report_dates_from_html(header_page)
-    return reports_available
+    full_results = []
+    page_1_result = parse(header_page)
+    full_results.append(page_1_result)
+    return full_results
+
+def tst():
+    """Something easy to call"""
+    return download_history_for_marketplace()
+
+def main():
+    """For now this is just for testing purposes
+    """
+    results = download_history_for_marketplace()
+#    page_one = results[0]
+#    all_lines = page_one.splitlines()
+#    print(all_lines[0])
+
+    #print(results)
+
+if __name__ == '__main__':
+    main()
 
 
 
@@ -73,3 +160,49 @@ def download_history_for_marketplace(market_code="TV_LS149"):
 # This week: https://www.cattle.com/markets/archive.aspx?code=TV_LS149&date=2019-03-27
 
 # Looks like a date that doesn't exist gets current data
+
+
+# looks like each category starts iwth \xa0 -- no break space
+
+# >>> b[39]
+# '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Slaughter\xa0Cows\xa0Boner\xa080-85%'
+# >>> b[40]
+# <br/>
+# >>> b[41]
+# '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price'
+# >>> b[42]
+# <br/>
+# >>> b[43]
+# '\xa01000-1100\xa0\xa0\xa01050\xa0\xa0\xa0\xa0\xa050.00-54.00\xa0\xa0\xa0\xa0\xa0\xa0\xa051.90'
+# >>> b[44]
+# <br/>
+# >>> b[45]
+# '\xa01235-1390\xa0\xa0\xa01318\xa0\xa0\xa0\xa0\xa050.00-51.00\xa0\xa0\xa0\xa0\xa0\xa0\xa050.34'
+
+
+
+# >>> b[39]
+# '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Slaughter\xa0Cows\xa0Boner\xa080-85%'
+# >>> b[40]
+# <br/>
+# >>> b[41]
+# '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price'
+# >>> b[42]
+# <br/>
+# >>> b[43]
+# '\xa01000-1100\xa0\xa0\xa01050\xa0\xa0\xa0\xa0\xa050.00-54.00\xa0\xa0\xa0\xa0\xa0\xa0\xa051.90'
+# >>> b[44]
+# <br/>
+# >>> b[45]
+# '\xa01235-1390\xa0\xa0\xa01318\xa0\xa0\xa0\xa0\xa050.00-51.00\xa0\xa0\xa0\xa0\xa0\xa0\xa050.34'
+# >>> b[46]
+# <br/>
+# >>> b[47]
+# '\xa01335-1350\xa0\xa0\xa01342\xa0\xa0\xa0\xa0\xa048.00-49.00\xa0\xa0\xa0\xa0\xa0\xa0\xa048.50\xa0\xa0\xa0Low\xa0Dressing'
+# >>> b[48]
+# <br/>
+# >>> b[49]
+# <br/>
+# >>> b[50]
+# '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Slaughter\xa0Cows\xa0Lean\xa085-90%'
+
