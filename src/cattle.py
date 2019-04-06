@@ -10,10 +10,6 @@ BASE_ADDRESS = "https://www.cattle.com/markets/"
 ARCHIVE_BASE = "archive.aspx?code="
 
 
-#current_report = "https://www.cattle.com/markets/archive.aspx?code=TV_LS149"
-#archive_page = "https://www.cattle.com/markets/archive.aspx?code=TV_LS149"
-
-
 def get_report_from_url(report_url):
     """Get the html from a report URL.
 
@@ -146,63 +142,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-# Given the URL for a site, find it's archives
-
-# Current Lanier report: https://www.cattle.com/markets/barn_report.aspx?code=TV_LS149
-
-# Page with archives: https://www.cattle.com/markets/archive.aspx?code=TV_LS149
-
-# Last week: https://www.cattle.com/markets/archive.aspx?code=TV_LS149&date=2019-03-20
-
-# This week: https://www.cattle.com/markets/archive.aspx?code=TV_LS149&date=2019-03-27
-
-# Looks like a date that doesn't exist gets current data
-
-
-# looks like each category starts iwth \xa0 -- no break space
-
-# >>> b[39]
-# '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Slaughter\xa0Cows\xa0Boner\xa080-85%'
-# >>> b[40]
-# <br/>
-# >>> b[41]
-# '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price'
-# >>> b[42]
-# <br/>
-# >>> b[43]
-# '\xa01000-1100\xa0\xa0\xa01050\xa0\xa0\xa0\xa0\xa050.00-54.00\xa0\xa0\xa0\xa0\xa0\xa0\xa051.90'
-# >>> b[44]
-# <br/>
-# >>> b[45]
-# '\xa01235-1390\xa0\xa0\xa01318\xa0\xa0\xa0\xa0\xa050.00-51.00\xa0\xa0\xa0\xa0\xa0\xa0\xa050.34'
-
-
-
-# >>> b[39]
-# '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Slaughter\xa0Cows\xa0Boner\xa080-85%'
-# >>> b[40]
-# <br/>
-# >>> b[41]
-# '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price'
-# >>> b[42]
-# <br/>
-# >>> b[43]
-# '\xa01000-1100\xa0\xa0\xa01050\xa0\xa0\xa0\xa0\xa050.00-54.00\xa0\xa0\xa0\xa0\xa0\xa0\xa051.90'
-# >>> b[44]
-# <br/>
-# >>> b[45]
-# '\xa01235-1390\xa0\xa0\xa01318\xa0\xa0\xa0\xa0\xa050.00-51.00\xa0\xa0\xa0\xa0\xa0\xa0\xa050.34'
-# >>> b[46]
-# <br/>
-# >>> b[47]
-# '\xa01335-1350\xa0\xa0\xa01342\xa0\xa0\xa0\xa0\xa048.00-49.00\xa0\xa0\xa0\xa0\xa0\xa0\xa048.50\xa0\xa0\xa0Low\xa0Dressing'
-# >>> b[48]
-# <br/>
-# >>> b[49]
-# <br/>
-# >>> b[50]
-# '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Slaughter\xa0Cows\xa0Lean\xa085-90%'
-
