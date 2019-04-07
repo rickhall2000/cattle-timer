@@ -87,11 +87,39 @@ def find_table(html_frag):
 def convert_table(table):
     """I am sick of docstrings
     """
-    name, data = table
+    _,data = table
     if data[0] == '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price':
         return table
-    else:
-        return None
+    return None
+
+def clean_name(name):
+    "This removes ugly chars from name"
+    new_name = ""
+    for word in name.split('\xa0'):
+        if word == "":
+            continue
+        if new_name:
+            new_name += " "
+        new_name += word
+    return new_name
+
+def parse_table(raw_table):
+    "This converts each line of text into an array of values"
+    rows = raw_table[1:]
+    table = []
+
+    for row in rows:
+        vals = row.split()
+        if len(vals) > 4:
+            extra = (" ".join(vals[4:]))
+        else:
+            extra = ""
+        clean_row = vals[0:4]
+        clean_row.append(extra)
+        print(clean_row)
+        table.append(clean_row)
+    return table
+
 
 def parse(page_html):
     """Extract the part of the page I care about
@@ -105,13 +133,17 @@ def parse(page_html):
     all_tables = find_table(list(soup.pre.children))
     cleaned_tables = map(convert_table, all_tables)
     just_tables = filter(lambda x: x is not None, cleaned_tables)
+    results = []
+
 
     for name, table in just_tables:
-        print("***************")
-        print(name)
-        for line in table:
-            print(line)
+        results.append((clean_name(name), parse_table(table)))
+        #print("***************")
+        #print(name)
+        #for line in table:
+        #    print(line)
 
+    return results
 
 def download_history_for_marketplace(market_code="TV_LS149"):
     """This returns all available data for a marketplace
