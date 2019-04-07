@@ -1,5 +1,6 @@
 """This project will download all reports from a cattle auction and return
     them in some sort of useful format"""
+import csv
 import re
 import requests
 from bs4 import BeautifulSoup
@@ -8,11 +9,6 @@ MODE = 'dev'
 
 BASE_ADDRESS = "https://www.cattle.com/markets/"
 ARCHIVE_BASE = "archive.aspx?code="
-
-
-#current_report = "https://www.cattle.com/markets/archive.aspx?code=TV_LS149"
-#archive_page = "https://www.cattle.com/markets/archive.aspx?code=TV_LS149"
-
 
 def get_report_from_url(report_url):
     """Get the html from a report URL.
@@ -91,118 +87,102 @@ def find_table(html_frag):
 def convert_table(table):
     """I am sick of docstrings
     """
-    name, data = table
+    _, data = table
     if data[0] == '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price':
         return table
-    else:
-        return None
+    return None
+
+def clean_name(name):
+    "This removes ugly chars from name"
+    new_name = ""
+    for word in name.split('\xa0'):
+        if word == "":
+            continue
+        if new_name:
+            new_name += " "
+        new_name += word
+    return new_name
+
+def parse_table(raw_table):
+    "This converts each line of text into an array of values"
+    rows = raw_table[1:]
+    table = []
+
+    for row in rows:
+        vals = row.split()
+        if len(vals) > 4:
+            extra = (" ".join(vals[4:]))
+        else:
+            extra = ""
+        clean_row = vals[0:4]
+        clean_row.append(extra)
+        table.append(clean_row)
+    return table
+
 
 def parse(page_html):
     """Extract the part of the page I care about
-
     arbuments: page_html - string containing the html to be parsed
-
     returns: the results, format tbd
-
     """
     soup = BeautifulSoup(page_html, 'html.parser')
     all_tables = find_table(list(soup.pre.children))
     cleaned_tables = map(convert_table, all_tables)
     just_tables = filter(lambda x: x is not None, cleaned_tables)
+    results = []
 
     for name, table in just_tables:
-        print("***************")
-        print(name)
-        for line in table:
-            print(line)
+        results.append((clean_name(name), parse_table(table)))
 
+    return results
+
+def make_filename(report_date, table_name):
+    legal_name = table_name.replace("%", "pct")
+    return report_date + "-" + "".join(legal_name.split())
 
 def download_history_for_marketplace(market_code="TV_LS149"):
     """This returns all available data for a marketplace
     Arguments: market_place code
-
     Returns: TBD
     """
     header_page = get_report_from_url(market_code)
     reports_available = get_report_dates_from_html(header_page)
     full_results = []
     page_1_result = parse(header_page)
-    full_results.append(page_1_result)
+    full_results.append(("current", page_1_result))
     return full_results
 
-def tst():
-    """Something easy to call"""
-    return download_history_for_marketplace()
+def output_results(results, combine_results = False):
+    header = ["Wt Range","Avg Wt", "Price Range", "Avg Price", "Extra"]
+    if combine_results:
+        header = ["category", "date"] + header
+        filename = "complete"
+        with open('data/' + filename + '.csv' , 'w') as csvfile:
+            filewriter = csv.writer(csvfile, delimiter=',',
+                quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            filewriter.writerow(header)
+            for report_date, tables in results:
+                for table_name, data in tables:
+                    for row in data:
+                        row = [table_name, report_date] + row
+                        filewriter.writerow(row)
+    else:
+        for report_date, tables in results:
+            for table_name, data in tables:
+                filename = make_filename(report_date, table_name)
+                with open('data/' + filename + '.csv' , 'w') as csvfile:
+                    filewriter = csv.writer(csvfile, delimiter=',',
+                        quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                    filewriter.writerow(header)
+                    for row in data:
+                        filewriter.writerow(row)
+
 
 def main():
     """For now this is just for testing purposes
     """
     results = download_history_for_marketplace()
-#    page_one = results[0]
-#    all_lines = page_one.splitlines()
-#    print(all_lines[0])
-
-    #print(results)
+    output_results(results, False)
 
 if __name__ == '__main__':
     main()
-
-
-
-# Given the URL for a site, find it's archives
-
-# Current Lanier report: https://www.cattle.com/markets/barn_report.aspx?code=TV_LS149
-
-# Page with archives: https://www.cattle.com/markets/archive.aspx?code=TV_LS149
-
-# Last week: https://www.cattle.com/markets/archive.aspx?code=TV_LS149&date=2019-03-20
-
-# This week: https://www.cattle.com/markets/archive.aspx?code=TV_LS149&date=2019-03-27
-
-# Looks like a date that doesn't exist gets current data
-
-
-# looks like each category starts iwth \xa0 -- no break space
-
-# >>> b[39]
-# '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Slaughter\xa0Cows\xa0Boner\xa080-85%'
-# >>> b[40]
-# <br/>
-# >>> b[41]
-# '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price'
-# >>> b[42]
-# <br/>
-# >>> b[43]
-# '\xa01000-1100\xa0\xa0\xa01050\xa0\xa0\xa0\xa0\xa050.00-54.00\xa0\xa0\xa0\xa0\xa0\xa0\xa051.90'
-# >>> b[44]
-# <br/>
-# >>> b[45]
-# '\xa01235-1390\xa0\xa0\xa01318\xa0\xa0\xa0\xa0\xa050.00-51.00\xa0\xa0\xa0\xa0\xa0\xa0\xa050.34'
-
-
-
-# >>> b[39]
-# '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Slaughter\xa0Cows\xa0Boner\xa080-85%'
-# >>> b[40]
-# <br/>
-# >>> b[41]
-# '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price'
-# >>> b[42]
-# <br/>
-# >>> b[43]
-# '\xa01000-1100\xa0\xa0\xa01050\xa0\xa0\xa0\xa0\xa050.00-54.00\xa0\xa0\xa0\xa0\xa0\xa0\xa051.90'
-# >>> b[44]
-# <br/>
-# >>> b[45]
-# '\xa01235-1390\xa0\xa0\xa01318\xa0\xa0\xa0\xa0\xa050.00-51.00\xa0\xa0\xa0\xa0\xa0\xa0\xa050.34'
-# >>> b[46]
-# <br/>
-# >>> b[47]
-# '\xa01335-1350\xa0\xa0\xa01342\xa0\xa0\xa0\xa0\xa048.00-49.00\xa0\xa0\xa0\xa0\xa0\xa0\xa048.50\xa0\xa0\xa0Low\xa0Dressing'
-# >>> b[48]
-# <br/>
-# >>> b[49]
-# <br/>
-# >>> b[50]
-# '\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0\xa0Slaughter\xa0Cows\xa0Lean\xa085-90%'
-
