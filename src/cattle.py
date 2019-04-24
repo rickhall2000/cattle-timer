@@ -21,7 +21,7 @@ def get_report_from_url(report_url):
         with open('sample_archive') as sample_file:
             results = sample_file.read()
     else:
-        results = requests.get(report_url)
+        results = requests.get(report_url).text
 
     return results
 
@@ -38,12 +38,15 @@ def get_report_dates_from_html(archive_html):
     match_string = r'<a href=\"\?code=.+&date=(\d{4}-\d{2}-\d{2})\">'
     return re.findall(match_string, archive_html)
 
-def make_archive_head_url(market_code):
+def make_archive_url(market_code, report_date = None):
     """Return the appropriate URL for the top archive page
     arguments: markeg_code string containing the id of the auction to download
     returns: a string containing the URL to download the top archive page
     """
-    return BASE_ADDRESS + ARCHIVE_BASE + market_code
+    target_url = BASE_ADDRESS + ARCHIVE_BASE + market_code
+    if report_date:
+        target_url = target_url + "&date=" + report_date
+    return target_url
 
 def can_be_table_start(elem):
     """accepts an html element determines if it is the
@@ -87,7 +90,8 @@ def convert_table(table):
     """This filters out blocks that don't begin with a table header.
     """
     _, data = table
-    if data[0] == '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price':
+
+    if data and data[0] == '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price':
         return table
     return None
 
@@ -140,11 +144,17 @@ def download_history_for_marketplace(market_code="TV_LS149"):
     Arguments: market_place code
     Returns: TBD
     """
-    header_page = get_report_from_url(market_code)
+    master_url = make_archive_url(market_code)
+    header_page = get_report_from_url(master_url)
     reports_available = get_report_dates_from_html(header_page)
     full_results = []
     page_1_result = parse(header_page)
     full_results.append(("current", page_1_result))
+    for report in reports_available:
+        report_url = make_archive_url(market_code, report)
+        page = get_report_from_url(report_url)
+        page_result = parse(page)
+        full_results.append((report, page_result))
 
     return full_results
 
