@@ -17,7 +17,6 @@ def get_report_from_url(report_url):
 
     returns: a string containing the html of the requested page
     """
-
     if MODE == 'dev':
         with open('sample_archive') as sample_file:
             results = sample_file.read()
@@ -62,18 +61,18 @@ def find_table(html_frag):
     current_table = []
     stop_tags = 0
 
-    for e in html_frag:
-        if (not active_table) and (can_be_table_start(e)):
+    for frag in html_frag:
+        if (not active_table) and (can_be_table_start(frag)):
             stop_tags = 0
             active_table = True
-            title = e
+            title = frag
             continue
 
         if active_table:
-            if e.string is not None:
-                current_table.append(e.string)
+            if frag.string is not None:
+                current_table.append(frag.string)
                 stop_tags = 0
-            elif e.name is not None and e.name == "br":
+            elif frag.name is not None and frag.name == "br":
                 stop_tags += 1
 
         if stop_tags == 2:
@@ -85,7 +84,7 @@ def find_table(html_frag):
     return all_tables
 
 def convert_table(table):
-    """I am sick of docstrings
+    """This filters out blocks that don't begin with a table header.
     """
     _, data = table
     if data[0] == '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price':
@@ -93,7 +92,7 @@ def convert_table(table):
     return None
 
 def clean_name(name):
-    "This removes ugly chars from name"
+    """This removes ugly chars from name"""
     new_name = ""
     for word in name.split('\xa0'):
         if word == "":
@@ -104,7 +103,7 @@ def clean_name(name):
     return new_name
 
 def parse_table(raw_table):
-    "This converts each line of text into an array of values"
+    """This converts each line of text into an array of values"""
     rows = raw_table[1:]
     table = []
 
