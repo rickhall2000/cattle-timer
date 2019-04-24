@@ -1,9 +1,9 @@
 """This project will download all reports from a cattle auction and return
     them in some sort of useful format"""
-import csv
 import re
 import requests
 from bs4 import BeautifulSoup
+import output
 
 MODE = 'dev'
 
@@ -136,10 +136,6 @@ def parse(page_html):
 
     return results
 
-def make_filename(report_date, table_name):
-    legal_name = table_name.replace("%", "pct")
-    return report_date + "-" + "".join(legal_name.split())
-
 def download_history_for_marketplace(market_code="TV_LS149"):
     """This returns all available data for a marketplace
     Arguments: market_place code
@@ -150,39 +146,14 @@ def download_history_for_marketplace(market_code="TV_LS149"):
     full_results = []
     page_1_result = parse(header_page)
     full_results.append(("current", page_1_result))
+
     return full_results
-
-def output_results(results, combine_results = False):
-    header = ["Wt Range","Avg Wt", "Price Range", "Avg Price", "Extra"]
-    if combine_results:
-        header = ["category", "date"] + header
-        filename = "complete"
-        with open('data/' + filename + '.csv' , 'w') as csvfile:
-            filewriter = csv.writer(csvfile, delimiter=',',
-                quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            filewriter.writerow(header)
-            for report_date, tables in results:
-                for table_name, data in tables:
-                    for row in data:
-                        row = [table_name, report_date] + row
-                        filewriter.writerow(row)
-    else:
-        for report_date, tables in results:
-            for table_name, data in tables:
-                filename = make_filename(report_date, table_name)
-                with open('data/' + filename + '.csv' , 'w') as csvfile:
-                    filewriter = csv.writer(csvfile, delimiter=',',
-                        quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                    filewriter.writerow(header)
-                    for row in data:
-                        filewriter.writerow(row)
-
 
 def main():
     """For now this is just for testing purposes
     """
     results = download_history_for_marketplace()
-    output_results(results, False)
+    output.output_results(results, True)
 
 if __name__ == '__main__':
     main()
