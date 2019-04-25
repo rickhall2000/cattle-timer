@@ -38,7 +38,7 @@ def get_report_dates_from_html(archive_html):
     match_string = r'<a href=\"\?code=.+&date=(\d{4}-\d{2}-\d{2})\">'
     return re.findall(match_string, archive_html)
 
-def make_archive_url(market_code, report_date = None):
+def make_archive_url(market_code, report_date=None):
     """Return the appropriate URL for the top archive page
     arguments: markeg_code string containing the id of the auction to download
     returns: a string containing the URL to download the top archive page
@@ -91,7 +91,8 @@ def convert_table(table):
     """
     _, data = table
 
-    if data and data[0] == '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price':
+    if data and data[0] == '\xa0Wt\xa0Range\xa0\xa0\xa0Avg' + \
+        '\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price':
         return table
     return None
 

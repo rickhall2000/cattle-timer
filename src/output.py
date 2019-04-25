@@ -10,14 +10,18 @@ def make_filename(report_date, table_name):
     return report_date + "-" + "".join(legal_name.split())
 
 
-def output_results(results, combine_results = False):
-    header = ["Wt Range","Avg Wt", "Price Range", "Avg Price", "Extra"]
+def output_results(results, combine_results=False):
+    """Take combined results, output them into one or many csv files
+    """
+    header = ["Wt Range", "Avg Wt", "Price Range", "Avg Price", "Extra"]
     if combine_results:
         header = ["category", "date"] + header
         filename = "complete"
-        with open('data/' + filename + '.csv' , 'w') as csvfile:
-            filewriter = csv.writer(csvfile, delimiter=',',
-                quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        with open('data/' + filename + '.csv', 'w') as csvfile:
+            filewriter = csv.writer(csvfile,
+                                    delimiter=',',
+                                    quotechar='"',
+                                    quoting=csv.QUOTE_MINIMAL)
             filewriter.writerow(header)
             for report_date, tables in results:
                 for table_name, data in tables:
@@ -28,10 +32,11 @@ def output_results(results, combine_results = False):
         for report_date, tables in results:
             for table_name, data in tables:
                 filename = make_filename(report_date, table_name)
-                with open('data/' + filename + '.csv' , 'w') as csvfile:
-                    filewriter = csv.writer(csvfile, delimiter=',',
-                        quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                with open('data/' + filename + '.csv', 'w') as csvfile:
+                    filewriter = csv.writer(csvfile,
+                                            delimiter=',',
+                                            quotechar='"',
+                                            quoting=csv.QUOTE_MINIMAL)
                     filewriter.writerow(header)
                     for row in data:
                         filewriter.writerow(row)
-
