@@ -1,6 +1,7 @@
 """This project will download all reports from a cattle auction and return
     them in some sort of useful format"""
 import re
+import datetime
 import requests
 from bs4 import BeautifulSoup
 import output
@@ -38,7 +39,7 @@ def get_report_dates_from_html(archive_html):
     match_string = r'<a href=\"\?code=.+&date=(\d{4}-\d{2}-\d{2})\">'
     return re.findall(match_string, archive_html)
 
-def make_archive_url(market_code, report_date = None):
+def make_archive_url(market_code, report_date=None):
     """Return the appropriate URL for the top archive page
     arguments: markeg_code string containing the id of the auction to download
     returns: a string containing the URL to download the top archive page
@@ -91,7 +92,8 @@ def convert_table(table):
     """
     _, data = table
 
-    if data and data[0] == '\xa0Wt\xa0Range\xa0\xa0\xa0Avg\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price':
+    if data and data[0] == '\xa0Wt\xa0Range\xa0\xa0\xa0Avg' + \
+        '\xa0Wt\xa0\xa0\xa0\xa0Price\xa0Range\xa0\xa0\xa0Avg\xa0Price':
         return table
     return None
 
@@ -139,6 +141,15 @@ def parse(page_html):
 
     return results
 
+def get_latest_report_date():
+    """This function returns a date to use as the current report
+        It could read it from the master page
+        It could wimp out and add 7 days to the latest date we have
+        For now, it just puts the current date in a string format
+    """
+    my_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    return my_date
+
 def download_history_for_marketplace(market_code="TV_LS149"):
     """This returns all available data for a marketplace
     Arguments: market_place code
@@ -149,7 +160,8 @@ def download_history_for_marketplace(market_code="TV_LS149"):
     reports_available = get_report_dates_from_html(header_page)
     full_results = []
     page_1_result = parse(header_page)
-    full_results.append(("current", page_1_result))
+    current_date = get_latest_report_date()
+    full_results.append((current_date, page_1_result))
     for report in reports_available:
         report_url = make_archive_url(market_code, report)
         page = get_report_from_url(report_url)
